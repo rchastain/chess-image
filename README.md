@@ -16,3 +16,5 @@ chess-image is a Lazarus project, using the BGRABitmap library.
 ## Credit
 
 chess-image uses the Montreal Chess font by Gary Katch.
+
+![alt text](position.png)
