@@ -199,8 +199,8 @@ begin
       for LSqColor := Low(TColor) to High(TColor) do
         LPieceIm[LColor, LPiece, LSqColor].Free;
 
-  LSquareIm[Black].Free;
   LSquareIm[White].Free;
+  LSquareIm[Black].Free;
   LResult.Free;
   Terminate;
 end;
@@ -229,7 +229,7 @@ var
 
 begin
   Application := TChessImageApp.Create(nil);
-  Application.Title:='ChessImage';
+  Application.Title := 'chess-image';
   Application.Run;
   Application.Free;
 end.
