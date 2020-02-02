@@ -26,10 +26,12 @@ type
 
 procedure TChessImageApp.DoRun;
 const
-  CDefaultPos  = '8/8/8/8/8/8/8/8 w - -';
-  CDefaultSize = 400;
-  CDefaultName = 'image.png';
-  CMaxSize     = 2000;
+  CDefaultPos         = '8/8/8/8/8/8/8/8 w - -';
+  CDefaultSize        = 400;
+  CMaxSize            = 2000;
+  CDefaultName        = 'image.png';
+  CDefaultFont        = 'montreal';
+  CDefaultCoordinates = FALSE;
 type
   TCorner = (TopLeft, TopRight, BottomLeft, BottomRight);
   TBorder = (Top, Left, Right, Bottom);
@@ -40,6 +42,8 @@ var
   LBorderIm       : array[TBorder] of TBGRABitmap;
   LPieceIm        : array[TColor, TPiece, TColor] of TBGRABitmap;
   LSquareIm       : array[TColor] of TBGRABitmap;
+  LLeftCoordIm    : array[1..8] of TBGRABitmap;
+  LBottomCoordIm  : array[1..8] of TBGRABitmap;
   LResult         : TBGRABitmap;
   LSqColor, LColor: TColor;
   LCorner         : TCorner;
@@ -48,6 +52,8 @@ var
   LErrMsg, LPos   : string;
   LFilename       : TFilename;
   LSize           : integer;
+  LFont           : string;
+  LCoordinates    : boolean;
   LX, LY, LI, LW  : integer;
   LChar           : char;
 function FSquareColor: TColor;
@@ -55,9 +61,9 @@ begin
   if (LX + LY) mod 2 = 1 then result := White else result := Black;
 end;
 begin
-  WriteLn('ChessImage 0.1');
+  WriteLn('ChessImage 0.2');
   
-  LErrMsg := CheckOptions('hp:s:o:', 'help position: size: output:');
+  LErrMsg := CheckOptions('hp:s:o:f:c', 'help position: size: output: font: coordinates');
   if LErrMsg <> '' then
   begin
     ShowException(Exception.Create(LErrMsg));
@@ -89,49 +95,68 @@ begin
   else
     LFilename := CDefaultName;
 
-  LCornerIm[TopLeft]     := TBGRABitmap.Create; LCornerIm[TopLeft].LoadFromResource('tlc');
-  LCornerIm[TopRight]    := TBGRABitmap.Create; LCornerIm[TopRight].LoadFromResource('trc');
-  LCornerIm[BottomLeft]  := TBGRABitmap.Create; LCornerIm[BottomLeft].LoadFromResource('blc');
-  LCornerIm[BottomRight] := TBGRABitmap.Create; LCornerIm[BottomRight].LoadFromResource('brc');
+  if HasOption('f', 'font') then
+    LFont := GetOptionValue('f', 'font')
+  else
+    LFont := CDefaultFont;
+  if  (LFont <> 'adventurer')
+  and (LFont <> 'montreal') then
+  begin
+    WriteLn('Possible values for the font parameter: adventurer, montreal');
+    LFont := CDefaultFont;
+  end;
 
-  LBorderIm[Top]    := TBGRABitmap.Create; LBorderIm[Top].LoadFromResource('tb');
-  LBorderIm[Left]   := TBGRABitmap.Create; LBorderIm[Left].LoadFromResource('lb');
-  LBorderIm[Right]  := TBGRABitmap.Create; LBorderIm[Right].LoadFromResource('rb');
-  LBorderIm[Bottom] := TBGRABitmap.Create; LBorderIm[Bottom].LoadFromResource('bb');
+  LCoordinates := HasOption('c', 'coordinates') or CDefaultCoordinates;
 
-  LPieceIm[Black, Bishop, Black] := TBGRABitmap.Create; LPieceIm[Black, Bishop, Black].LoadFromResource('bbb');
-  LPieceIm[Black, Bishop, White] := TBGRABitmap.Create; LPieceIm[Black, Bishop, White].LoadFromResource('bbw');
-  LPieceIm[Black, King, Black]   := TBGRABitmap.Create; LPieceIm[Black, King, Black].LoadFromResource('bkb');
-  LPieceIm[Black, King, White]   := TBGRABitmap.Create; LPieceIm[Black, King, White].LoadFromResource('bkw');
-  LPieceIm[Black, Knight, Black] := TBGRABitmap.Create; LPieceIm[Black, Knight, Black].LoadFromResource('bnb');
-  LPieceIm[Black, Knight, White] := TBGRABitmap.Create; LPieceIm[Black, Knight, White].LoadFromResource('bnw');
-  LPieceIm[Black, Pawn, Black]   := TBGRABitmap.Create; LPieceIm[Black, Pawn, Black].LoadFromResource('bpb');
-  LPieceIm[Black, Pawn, White]   := TBGRABitmap.Create; LPieceIm[Black, Pawn, White].LoadFromResource('bpw');
-  LPieceIm[Black, Queen, Black]  := TBGRABitmap.Create; LPieceIm[Black, Queen, Black].LoadFromResource('bqb');
-  LPieceIm[Black, Queen, White]  := TBGRABitmap.Create; LPieceIm[Black, Queen, White].LoadFromResource('bqw');
-  LPieceIm[Black, Rook, Black]   := TBGRABitmap.Create; LPieceIm[Black, Rook, Black].LoadFromResource('brb');
-  LPieceIm[Black, Rook, White]   := TBGRABitmap.Create; LPieceIm[Black, Rook, White].LoadFromResource('brw');
+  LCornerIm[TopLeft]     := TBGRABitmap.Create; LCornerIm[TopLeft].LoadFromResource(LFont + '_tlc');
+  LCornerIm[TopRight]    := TBGRABitmap.Create; LCornerIm[TopRight].LoadFromResource(LFont + '_trc');
+  LCornerIm[BottomLeft]  := TBGRABitmap.Create; LCornerIm[BottomLeft].LoadFromResource(LFont + '_blc');
+  LCornerIm[BottomRight] := TBGRABitmap.Create; LCornerIm[BottomRight].LoadFromResource(LFont + '_brc');
 
-  LPieceIm[White, Bishop, Black] := TBGRABitmap.Create; LPieceIm[White, Bishop, Black].LoadFromResource('wbb');
-  LPieceIm[White, Bishop, White] := TBGRABitmap.Create; LPieceIm[White, Bishop, White].LoadFromResource('wbw');
-  LPieceIm[White, King, Black]   := TBGRABitmap.Create; LPieceIm[White, King, Black].LoadFromResource('wkb');
-  LPieceIm[White, King, White]   := TBGRABitmap.Create; LPieceIm[White, King, White].LoadFromResource('wkw');
-  LPieceIm[White, Knight, Black] := TBGRABitmap.Create; LPieceIm[White, Knight, Black].LoadFromResource('wnb');
-  LPieceIm[White, Knight, White] := TBGRABitmap.Create; LPieceIm[White, Knight, White].LoadFromResource('wnw');
-  LPieceIm[White, Pawn, Black]   := TBGRABitmap.Create; LPieceIm[White, Pawn, Black].LoadFromResource('wpb');
-  LPieceIm[White, Pawn, White]   := TBGRABitmap.Create; LPieceIm[White, Pawn, White].LoadFromResource('wpw');
-  LPieceIm[White, Queen, Black]  := TBGRABitmap.Create; LPieceIm[White, Queen, Black].LoadFromResource('wqb');
-  LPieceIm[White, Queen, White]  := TBGRABitmap.Create; LPieceIm[White, Queen, White].LoadFromResource('wqw');
-  LPieceIm[White, Rook, Black]   := TBGRABitmap.Create; LPieceIm[White, Rook, Black].LoadFromResource('wrb');
-  LPieceIm[White, Rook, White]   := TBGRABitmap.Create; LPieceIm[White, Rook, White].LoadFromResource('wrw');
+  LBorderIm[Top]    := TBGRABitmap.Create; LBorderIm[Top].LoadFromResource(LFont + '_tb');
+  LBorderIm[Left]   := TBGRABitmap.Create; LBorderIm[Left].LoadFromResource(LFont + '_lb');
+  LBorderIm[Right]  := TBGRABitmap.Create; LBorderIm[Right].LoadFromResource(LFont + '_rb');
+  LBorderIm[Bottom] := TBGRABitmap.Create; LBorderIm[Bottom].LoadFromResource(LFont + '_bb');
+
+  LPieceIm[Black, Bishop, Black] := TBGRABitmap.Create; LPieceIm[Black, Bishop, Black].LoadFromResource(LFont + '_bbb');
+  LPieceIm[Black, Bishop, White] := TBGRABitmap.Create; LPieceIm[Black, Bishop, White].LoadFromResource(LFont + '_bbw');
+  LPieceIm[Black, King, Black]   := TBGRABitmap.Create; LPieceIm[Black, King, Black].LoadFromResource(LFont + '_bkb');
+  LPieceIm[Black, King, White]   := TBGRABitmap.Create; LPieceIm[Black, King, White].LoadFromResource(LFont + '_bkw');
+  LPieceIm[Black, Knight, Black] := TBGRABitmap.Create; LPieceIm[Black, Knight, Black].LoadFromResource(LFont + '_bnb');
+  LPieceIm[Black, Knight, White] := TBGRABitmap.Create; LPieceIm[Black, Knight, White].LoadFromResource(LFont + '_bnw');
+  LPieceIm[Black, Pawn, Black]   := TBGRABitmap.Create; LPieceIm[Black, Pawn, Black].LoadFromResource(LFont + '_bpb');
+  LPieceIm[Black, Pawn, White]   := TBGRABitmap.Create; LPieceIm[Black, Pawn, White].LoadFromResource(LFont + '_bpw');
+  LPieceIm[Black, Queen, Black]  := TBGRABitmap.Create; LPieceIm[Black, Queen, Black].LoadFromResource(LFont + '_bqb');
+  LPieceIm[Black, Queen, White]  := TBGRABitmap.Create; LPieceIm[Black, Queen, White].LoadFromResource(LFont + '_bqw');
+  LPieceIm[Black, Rook, Black]   := TBGRABitmap.Create; LPieceIm[Black, Rook, Black].LoadFromResource(LFont + '_brb');
+  LPieceIm[Black, Rook, White]   := TBGRABitmap.Create; LPieceIm[Black, Rook, White].LoadFromResource(LFont + '_brw');
+
+  LPieceIm[White, Bishop, Black] := TBGRABitmap.Create; LPieceIm[White, Bishop, Black].LoadFromResource(LFont + '_wbb');
+  LPieceIm[White, Bishop, White] := TBGRABitmap.Create; LPieceIm[White, Bishop, White].LoadFromResource(LFont + '_wbw');
+  LPieceIm[White, King, Black]   := TBGRABitmap.Create; LPieceIm[White, King, Black].LoadFromResource(LFont + '_wkb');
+  LPieceIm[White, King, White]   := TBGRABitmap.Create; LPieceIm[White, King, White].LoadFromResource(LFont + '_wkw');
+  LPieceIm[White, Knight, Black] := TBGRABitmap.Create; LPieceIm[White, Knight, Black].LoadFromResource(LFont + '_wnb');
+  LPieceIm[White, Knight, White] := TBGRABitmap.Create; LPieceIm[White, Knight, White].LoadFromResource(LFont + '_wnw');
+  LPieceIm[White, Pawn, Black]   := TBGRABitmap.Create; LPieceIm[White, Pawn, Black].LoadFromResource(LFont + '_wpb');
+  LPieceIm[White, Pawn, White]   := TBGRABitmap.Create; LPieceIm[White, Pawn, White].LoadFromResource(LFont + '_wpw');
+  LPieceIm[White, Queen, Black]  := TBGRABitmap.Create; LPieceIm[White, Queen, Black].LoadFromResource(LFont + '_wqb');
+  LPieceIm[White, Queen, White]  := TBGRABitmap.Create; LPieceIm[White, Queen, White].LoadFromResource(LFont + '_wqw');
+  LPieceIm[White, Rook, Black]   := TBGRABitmap.Create; LPieceIm[White, Rook, Black].LoadFromResource(LFont + '_wrb');
+  LPieceIm[White, Rook, White]   := TBGRABitmap.Create; LPieceIm[White, Rook, White].LoadFromResource(LFont + '_wrw');
 
   LSquareIm[Black] := TBGRABitmap.Create;
-  LSquareIm[Black].LoadFromResource('bs');
+  LSquareIm[Black].LoadFromResource(LFont + '_bs');
   LSquareIm[White] := TBGRABitmap.Create;
-  LSquareIm[White].LoadFromResource('ws');
+  LSquareIm[White].LoadFromResource(LFont + '_ws');
 
   LW := LSquareIm[White].Width;
-  
+
+  for LI := 1 to 8 do
+  begin
+    LLeftCoordIm[LI]   := TBGRABitmap.Create; LLeftCoordIm[LI].LoadFromResource(LFont + '_lb_' + IntToStr(LI));
+    LBottomCoordIm[LI] := TBGRABitmap.Create; LBottomCoordIm[LI].LoadFromResource(LFont + '_bb_' + Chr(LI + Ord('a') - 1));
+  end;
+
   LResult := TBGRABitmap.Create(10 * LW, 10 * LW, BGRAWhite);
 
   LResult.PutImage(0, 0, LCornerIm[TopLeft], dmDrawWithTransparency);
@@ -139,13 +164,21 @@ begin
   LResult.PutImage(0, LW * 9, LCornerIm[BottomLeft], dmDrawWithTransparency);
   LResult.PutImage(LW * 9, LW * 9, LCornerIm[BottomRight], dmDrawWithTransparency);
 
-  for LI := 1 to 8 do
-  begin
-    LResult.PutImage(LW * LI, 0, LBorderIm[Top], dmDrawWithTransparency);
-    LResult.PutImage(0, LW * LI, LBorderIm[Left], dmDrawWithTransparency);
-    LResult.PutImage(LW * 9, LW * LI, LBorderIm[Right], dmDrawWithTransparency);
-    LResult.PutImage(LW * LI, LW * 9, LBorderIm[Bottom], dmDrawWithTransparency);
-  end;
+  if LCoordinates then
+    for LI := 1 to 8 do
+    begin
+      LResult.PutImage(LW * LI, 0, LBorderIm[Top], dmDrawWithTransparency);
+      LResult.PutImage(0, LW * LI, LLeftCoordIm[9 - LI], dmDrawWithTransparency);
+      LResult.PutImage(LW * 9, LW * LI, LBorderIm[Right], dmDrawWithTransparency);
+      LResult.PutImage(LW * LI, LW * 9, LBottomCoordIm[LI], dmDrawWithTransparency);
+    end else
+      for LI := 1 to 8 do
+      begin
+        LResult.PutImage(LW * LI, 0, LBorderIm[Top], dmDrawWithTransparency);
+        LResult.PutImage(0, LW * LI, LBorderIm[Left], dmDrawWithTransparency);
+        LResult.PutImage(LW * 9, LW * LI, LBorderIm[Right], dmDrawWithTransparency);
+        LResult.PutImage(LW * LI, LW * 9, LBorderIm[Bottom], dmDrawWithTransparency);
+      end;
 
   LX := 1;
   LY := 8;
@@ -201,6 +234,13 @@ begin
 
   LSquareIm[White].Free;
   LSquareIm[Black].Free;
+
+  for LI := 1 to 8 do
+  begin
+    LLeftCoordIm[LI].Free;
+    LBottomCoordIm[LI].Free;
+  end;
+
   LResult.Free;
   Terminate;
 end;
@@ -222,6 +262,8 @@ begin
   WriteLn('-p <fen> or --position=<fen>');
   WriteLn('-s <size> or --size=<size>');
   WriteLn('-o <file> or --output=<file>');
+  WriteLn('-f <file> or --font=<font>');
+  WriteLn('-c or --coordinates');
 end;
 
 var
@@ -229,7 +271,8 @@ var
 
 begin
   Application := TChessImageApp.Create(nil);
-  Application.Title := 'chess-image';
+  Application.Title:='ChessImage';
   Application.Run;
   Application.Free;
 end.
+
