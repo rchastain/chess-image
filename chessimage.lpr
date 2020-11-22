@@ -24,7 +24,6 @@ type
     procedure WriteHelp; virtual;
   end;
 
-procedure TChessImageApp.DoRun;
 const
   CDefaultPos         = '8/8/8/8/8/8/8/8 w - -';
   CDefaultSize        = 400;
@@ -32,6 +31,8 @@ const
   CDefaultName        = 'image.png';
   CDefaultFont        = 'montreal';
   CDefaultCoordinates = FALSE;
+
+procedure TChessImageApp.DoRun;
 type
   TCorner = (TopLeft, TopRight, BottomLeft, BottomRight);
   TBorder = (Top, Left, Right, Bottom);
@@ -61,12 +62,14 @@ begin
   if (LX + LY) mod 2 = 1 then result := White else result := Black;
 end;
 begin
-  WriteLn('ChessImage 0.2');
+  WriteLn('ChessImage 0.2.1');
   
   LErrMsg := CheckOptions('hp:s:o:f:c', 'help position: size: output: font: coordinates');
-  if LErrMsg <> '' then
+  if (LErrMsg <> '') or (ParamCount = 0) then
   begin
-    ShowException(Exception.Create(LErrMsg));
+    if LErrMsg <> '' then
+      WriteLn(LErrMsg);
+    WriteHelp;
     Terminate;
     Exit;
   end;
@@ -258,12 +261,20 @@ end;
 
 procedure TChessImageApp.WriteHelp;
 begin
-  WriteLn('Usage: ', ExeName, ' -h');
-  WriteLn('-p <fen> or --position=<fen>');
-  WriteLn('-s <size> or --size=<size>');
-  WriteLn('-o <file> or --output=<file>');
-  WriteLn('-f <file> or --font=<font>');
-  WriteLn('-c or --coordinates');
+  WriteLn('Usage: chess-image [options]');
+  WriteLn('Options:');
+  WriteLn('  -h        or --help          : Show help');
+  WriteLn('  -p <fen>  or --position=<fen>: The position you want an image of (mandatory)');
+  WriteLn('  -s <size> or --size=<size>   : The size of the image (default: ', CDefaultSize, ')');
+  WriteLn('  -o <file> or --output=<file> : The name to give to the file (default: ', CDefaultName, ')');
+  WriteLn('  -f <file> or --font=<font>   : The font to use (available: adventurer, montreal; default: ', CDefaultFont, ')');
+  WriteLn('  -c        or --coordinates   : Append coordinates around the board (default: ', CDefaultCoordinates, ')');
+  WriteLn('Example:');
+{$IFDEF UNIX}
+  WriteLn('  ./chess-image -p "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" -s 200');
+{$ELSE}
+  WriteLn('  chess-image -p "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" -s 200');
+{$ENDIF}
 end;
 
 var
